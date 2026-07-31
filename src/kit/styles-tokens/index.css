@@ -1,0 +1,135 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/inter";
+
+@import "./theme.css";
+@import "./tokens.css";
+
+/*
+ * Deliberately no `:root`/`body` reset here — this is a library embedded in
+ * a host page, not a standalone app. Everything below is scoped to
+ * `.su-scope` (the wrapper <ThemeProvider/> renders) instead of the document
+ * root, so it can never repaint a host app's own <body>.
+ */
+@layer base {
+  .su-scope,
+  .su-scope * {
+    @apply border-border outline-ring/50;
+  }
+
+  .su-scope {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans);
+  }
+
+  /*
+   * Normalize Lucide icon line weight to 1.5px (the design lab's baseline);
+   * without this they render at Lucide's 2px default, a visible mismatch.
+   */
+  .su-scope svg.lucide,
+  .su-scope svg[data-lucide] {
+    stroke-width: 1.5;
+  }
+
+  .su-scope input:is(:-webkit-autofill, :autofill),
+  .su-scope textarea:is(:-webkit-autofill, :autofill),
+  .su-scope select:is(:-webkit-autofill, :autofill) {
+    -webkit-text-fill-color: inherit;
+    caret-color: inherit;
+    transition:
+      background-color 600000s 0s,
+      color 600000s 0s;
+  }
+}
+
+/*
+ * UNLAYERED ON PURPOSE — do not move this into @layer.
+ *
+ * Two components ring a focused DESCENDANT instead of themselves: the wrapper
+ * carries `focus-within:ring-*` and the inner control sets `outline-none`
+ * (`combobox-chips` + its chip input, `input-group` + its control). But
+ * `outline-none` is a utility, so it lives in a layer — and ANY unlayered rule in
+ * the host page beats it regardless of specificity. A host with the very ordinary
+ *
+ *     :focus-visible { outline: 2px solid … }
+ *
+ * therefore gets TWO rings on those fields: our rounded one on the wrapper plus a
+ * rectangular one, in the host's own colour, around the input. Disc hit exactly
+ * this on the add-people field of ShareAccessDialog.
+ *
+ * Being unlayered and more specific than a bare `:focus-visible`, this wins that
+ * cascade and keeps the promise that consuming a kit component needs no
+ * receiving-side CSS. Scoped to the two wrappers that own a ring, so every other
+ * focusable element still takes the host's outline — nothing loses its focus
+ * indication.
+ */
+.su-scope
+  :is([data-slot="combobox-chips"], [data-slot="input-group"])
+  :focus-visible {
+  outline: none;
+}
+
+@layer components {
+  /*
+   * Cut the next avatar's silhouette out of the current one. Unlike a
+   * background-colored ring, this is a genuinely transparent gap and therefore
+   * separates overlapping avatars on any surface.
+   */
+  [data-slot="avatar-group"]
+    > :is(
+      [data-slot="avatar"],
+      [data-slot="tooltip-trigger"],
+      [data-slot="avatar-group-count"]
+    ):not(:last-child) {
+    --avatar-cutout-radius: 18px;
+    --avatar-next-center: 40px;
+
+    -webkit-mask-image: radial-gradient(
+      circle var(--avatar-cutout-radius) at var(--avatar-next-center) 50%,
+      transparent 98%,
+      #000 100%
+    );
+    mask-image: radial-gradient(
+      circle var(--avatar-cutout-radius) at var(--avatar-next-center) 50%,
+      transparent 98%,
+      #000 100%
+    );
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+  }
+
+  [data-slot="avatar-group"]
+    > :is(
+      [data-slot="avatar"][data-size="sm"],
+      [data-slot="tooltip-trigger"][data-size="sm"],
+      [data-slot="tooltip-trigger"]:has([data-slot="avatar"][data-size="sm"])
+    ):not(:last-child),
+  [data-slot="avatar-group"]:has(
+      :is(
+        [data-slot="avatar"][data-size="sm"],
+        [data-slot="tooltip-trigger"][data-size="sm"]
+      )
+    )
+    > [data-slot="avatar-group-count"]:not(:last-child) {
+    --avatar-cutout-radius: 14px;
+    --avatar-next-center: 28px;
+  }
+
+  [data-slot="avatar-group"]
+    > :is(
+      [data-slot="avatar"][data-size="lg"],
+      [data-slot="tooltip-trigger"][data-size="lg"],
+      [data-slot="tooltip-trigger"]:has([data-slot="avatar"][data-size="lg"])
+    ):not(:last-child),
+  [data-slot="avatar-group"]:has(
+      :is(
+        [data-slot="avatar"][data-size="lg"],
+        [data-slot="tooltip-trigger"][data-size="lg"]
+      )
+    )
+    > [data-slot="avatar-group-count"]:not(:last-child) {
+    --avatar-cutout-radius: 22px;
+    --avatar-next-center: 52px;
+  }
+}
