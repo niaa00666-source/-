@@ -1,7 +1,17 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState, type CSSProperties } from "react"
 
-import { AppShell } from "@scrambled/ui-kit"
+import { PanelLeft } from "@scrambled/ui-kit/icons"
+import {
+  AppShell,
+  Button,
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetTitle,
+  SidebarProvider,
+} from "@scrambled/ui-kit"
 
+import { useCompactLayout } from "./use-compact-layout"
 import {
   defaultTaskFilters,
   defaultTasksCapabilities,
@@ -141,6 +151,8 @@ export function TasksApp() {
     withDerivedOverdue(loadTasks() ?? populatedTasks)
   )
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
+  const compact = useCompactLayout()
+  const [navOpen, setNavOpen] = useState(false)
 
   useEffect(() => {
     saveTasks(tasks)
@@ -152,6 +164,9 @@ export function TasksApp() {
       ...currentFilters,
       assignee: section === "my" ? CURRENT_USER_ID : "all",
     }))
+    // В узкой раскладке разделы живут в выдвижной панели: выбрал — она уходит,
+    // иначе список остаётся за ней.
+    setNavOpen(false)
   }
 
   // «Не фильтровать» звучит по-разному в разных разделах: в «Моих задачах»
@@ -291,39 +306,86 @@ export function TasksApp() {
     }
   }, [tasks])
 
+  const sidebar = (
+    <TasksSidebar
+      activeSection={activeSection}
+      canCreate={defaultTasksCapabilities.canCreate}
+      counts={sectionCounts}
+      onCreateTask={() => {
+        setNavOpen(false)
+        setCreateDialogOpen(true)
+      }}
+      onSectionChange={selectSection}
+    />
+  )
+
+  const workspace = (
+    <TasksWorkspace
+      activeSection={activeSection}
+      assigneeOptions={taskAssigneeOptions}
+      capabilities={defaultTasksCapabilities}
+      createDialogOpen={createDialogOpen}
+      currentUserId={CURRENT_USER_ID}
+      defaultFilters={sectionNeutralFilters}
+      filterOptions={taskFilterOptions}
+      filters={filters}
+      onCreateDialogOpenChange={setCreateDialogOpen}
+      onCreateTask={createTask}
+      onDeleteTask={deleteTask}
+      onFiltersChange={setFilters}
+      onFiltersReset={() => setFilters(sectionNeutralFilters)}
+      onSortDirectionChange={setSortDirection}
+      onTaskStatusChange={changeTaskStatus}
+      onUpdateTask={updateTask}
+      sortDirection={sortDirection}
+      tasks={visibleTasks}
+    />
+  )
+
+  if (compact) {
+    return (
+      <div className="flex h-dvh flex-col bg-background">
+        <header className="flex shrink-0 items-center gap-2 border-b border-border px-3 py-2">
+          <Button
+            aria-label="Разделы задач"
+            onClick={() => setNavOpen(true)}
+            size="icon-sm"
+            variant="ghost"
+          >
+            <PanelLeft />
+          </Button>
+          <h1 className="truncate text-base font-semibold">Задачи</h1>
+        </header>
+
+        {/* Собственный контейнер прокрутки: экран рассчитывает на него —
+            `min-h-full` секции и липкая кнопка создания меряются об него. */}
+        <div className="min-h-0 flex-1 overflow-y-auto">{workspace}</div>
+
+        <Sheet onOpenChange={setNavOpen} open={navOpen}>
+          <SheetContent
+            className="w-[280px] max-w-[85vw] p-0 sm:max-w-[280px]"
+            side="left"
+          >
+            <SheetTitle className="sr-only">Разделы задач</SheetTitle>
+            <SheetDescription className="sr-only">
+              Навигация по разделам задач
+            </SheetDescription>
+            {/* Та же обвязка, что даёт сайдбару оболочка на широком экране. */}
+            <SidebarProvider
+              className="h-full min-h-0 w-full"
+              style={{ "--sidebar-width": "100%" } as CSSProperties}
+            >
+              {sidebar}
+            </SidebarProvider>
+          </SheetContent>
+        </Sheet>
+      </div>
+    )
+  }
+
   return (
-    <AppShell
-      showProductRail={false}
-      sidebar={
-        <TasksSidebar
-          activeSection={activeSection}
-          canCreate={defaultTasksCapabilities.canCreate}
-          counts={sectionCounts}
-          onCreateTask={() => setCreateDialogOpen(true)}
-          onSectionChange={selectSection}
-        />
-      }
-    >
-      <TasksWorkspace
-        activeSection={activeSection}
-        assigneeOptions={taskAssigneeOptions}
-        capabilities={defaultTasksCapabilities}
-        createDialogOpen={createDialogOpen}
-        currentUserId={CURRENT_USER_ID}
-        defaultFilters={sectionNeutralFilters}
-        filterOptions={taskFilterOptions}
-        filters={filters}
-        onCreateDialogOpenChange={setCreateDialogOpen}
-        onCreateTask={createTask}
-        onDeleteTask={deleteTask}
-        onFiltersChange={setFilters}
-        onFiltersReset={() => setFilters(sectionNeutralFilters)}
-        onSortDirectionChange={setSortDirection}
-        onTaskStatusChange={changeTaskStatus}
-        onUpdateTask={updateTask}
-        sortDirection={sortDirection}
-        tasks={visibleTasks}
-      />
+    <AppShell showProductRail={false} sidebar={sidebar}>
+      {workspace}
     </AppShell>
   )
 }
