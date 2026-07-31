@@ -404,7 +404,7 @@ export function TasksScreen({
 
   return (
     <section className="relative flex min-h-full flex-col bg-background">
-      <div className="flex flex-col gap-6 px-6 pt-6 pb-4 lg:px-8">
+      <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-6 pt-6 pb-4 lg:px-8">
         {/* h1 занят названием продукта в сайдбаре — как в Почте и Диске. */}
         <h2 className="text-lg font-semibold tracking-tight">
           {labels.titleBySection[activeSection]}
@@ -446,7 +446,7 @@ export function TasksScreen({
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 px-6 pb-4 lg:px-8">
+      <div className="mx-auto flex w-full max-w-4xl min-h-0 flex-1 px-6 pb-4 lg:px-8">
         {tasks.length === 0 ? (
           <Empty className="min-h-full flex-1">
             <EmptyHeader>
@@ -469,7 +469,7 @@ export function TasksScreen({
             ) : null}
           </Empty>
         ) : activeSection === "assigned" ? (
-          <div className="flex w-full max-w-4xl flex-col gap-6">
+          <div className="flex w-full flex-col gap-6">
             {overdueTasks.length > 0 ? (
               <section aria-labelledby="tasks-overdue-heading">
                 <h3
@@ -498,10 +498,7 @@ export function TasksScreen({
             ) : null}
           </div>
         ) : (
-          <ItemGroup
-            aria-label={labels.taskListAriaLabel}
-            className="max-w-4xl gap-2"
-          >
+          <ItemGroup aria-label={labels.taskListAriaLabel} className="gap-2">
             {tasks.map(renderTask)}
           </ItemGroup>
         )}
@@ -514,12 +511,10 @@ export function TasksScreen({
         // окна; обёртка занимает обычную высоту, без `h-0` и отрицательного
         // сдвига.
         //
-        // По ГОРИЗОНТАЛИ кнопка привязана к правому краю рабочей области, а он
-        // ниже 1120 px уходит за окно: оболочка держит минимальную геометрию и
-        // обрезается вьюпортом без горизонтальной прокрутки (DESIGN.md). В узком
-        // окне кнопка недостижима — и это верно для всей правой части экрана,
-        // а не только для неё. Чинится в оболочке, не здесь.
-        <div className="pointer-events-none sticky bottom-0 z-20 flex justify-end px-6 pb-6 lg:px-8 lg:pb-8">
+        // По ГОРИЗОНТАЛИ кнопка держится той же центрированной колонки, что и
+        // список: иначе на широком экране она улетает в угол окна, за сотни
+        // пикселей от контента, который она дополняет.
+        <div className="pointer-events-none sticky bottom-0 z-20 mx-auto flex w-full max-w-4xl justify-end px-6 pb-6 lg:px-8 lg:pb-8">
           <Button
             aria-label={labels.create.open}
             className="pointer-events-auto size-12 rounded-full"
